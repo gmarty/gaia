@@ -1,0 +1,98 @@
+#music-module {
+  color: #4d4d4d;
+  height: 9rem;
+}
+
+#music-module.disabled,
+#lockscreen-media-container.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+#lockscreen-media-container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(10rem + 1px);
+  height: auto;
+  background: rgba(0, 0, 0, 0.75);
+  border-top: 1px solid #9c9a9c;
+  border-bottom: 1px solid black;
+  z-index: 1;
+}
+
+/* The "Now Playing" section */
+#music-module .media-playback-nowplaying {
+  height: 4rem;
+  margin: 0;
+}
+
+#music-module .description {
+  font: italic 1.7rem none;
+  text-align: center;
+  padding: 1.2rem;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The playback controls section */
+
+#music-module .media-playback-controls {
+  margin: 0;
+  height: 5rem;
+  overflow: hidden;
+  text-align: center;
+  font-size: 0; /* ensure there's no space between the buttons */
+}
+
+#music-module .media-playback-controls > button {
+  width: calc(100% / 3);
+  height: 4rem;
+  padding: 0;
+  border-width: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: transparent;
+  font-size: 3rem;
+  line-height: 3rem;
+
+  /* Icons related rules */
+  font-family: 'gaia-settings-drawer-icons';
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+
+  /* Better Font Rendering =========== */
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#music-module .media-playback-controls > button:active {
+  color: #00caf2;
+}
+
+#music-module .media-playback-controls > .rewind:before {
+  content: "\e608";
+}
+
+#music-module .media-playback-controls > .play:before {
+  content: "\e607";
+}
+
+#music-module .media-playback-controls > .play.paused:before {
+  content: "\e606";
+}
+
+#music-module .media-playback-controls > .forward:before {
+  content: "\e609";
+}
+
+#music-module .media-playback-controls.big {
+  height: 7rem;
+}
+
+#music-module .media-playback-controls.big > button {
+  font-size: 4rem;
+}

@@ -223,6 +223,7 @@ function execute(config) {
 
   if (config.HAIDA) {
     settings['rocketbar.enabled'] = true;
+    settings['settings-drawer.enabled'] = true;
     settings['edgesgesture.enabled'] = true;
     settings['in-app-sheet.enabled'] = true;
   }

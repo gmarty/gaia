@@ -503,6 +503,18 @@ var Widget = (function() {
 
   return {
     init: function() {
+      // This is a hack to allow using the Utility tray and the new Settings
+      // drawer at the same time.
+      // If opened from the Settings drawer, we add a hash to the widget URL to
+      // allow different styling than when in the utility tray.
+      var cssFile = 'style/widget.css';
+
+      if (document.location.hash === '#visual_refresh') {
+        cssFile = 'style/widget_visual_refresh.css';
+      }
+
+      LazyLoader.load(cssFile);
+
       var SCRIPTS_NEEDED = [
         'js/common.js',
         'js/utils/toolkit.js'

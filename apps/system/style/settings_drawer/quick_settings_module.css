@@ -1,0 +1,129 @@
+#quick-settings-module {
+  height: 7rem;
+  background-color: rgba(255, 255, 255, 0.93);
+  border-bottom: .1rem #ddd solid;
+
+  pointer-events: none;
+}
+
+#quick-settings-module ul {
+  padding: 0 1rem;
+  margin: 0;
+}
+
+#quick-settings-module li {
+  width: 20%;
+  display: block;
+  float: left;
+  /* Keep the 1rem area on top the settings icons inactive top to avoid
+  activating them when tapping too low on the status bar */
+  height: 6em;
+  margin-top: 1rem;
+}
+
+/* On non mobile environment, the data setting is removed and the other ones are
+resized accordingly. */
+#quick-settings-module.non-mobile #quick-settings-module-li-data,
+#quick-settings-module.non-mobile #quick-settings-module-data {
+  display: none;
+}
+
+#quick-settings-module.non-mobile li {
+  width: 25%;
+}
+
+#quick-settings-module ul li a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  color: #bdbdbd;
+  font-size: 2.4rem;
+  line-height: 5rem;
+  text-align: center;
+  text-decoration: none;
+  outline: none;
+  background-color: transparent;
+  background-size: 3rem;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  pointer-events: auto;
+
+  /* Icons related rules */
+  font-family: 'gaia-settings-drawer-icons';
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+
+  /* Better Font Rendering =========== */
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#quick-settings-module.non-mobile > a {
+  width: calc(25% - 0.2rem);
+}
+
+#quick-settings-module ul li a[data-enabled],
+#quick-settings-module ul li a:active {
+  color: #00caf2;
+}
+
+#quick-settings-module ul li a[data-initializing] {
+  opacity: 0.3;
+}
+
+/* Indicates no network due to airplane mode */
+#quick-settings-module-data.quick-settings-airplane-mode {
+  opacity: 0.5;
+}
+
+#quick-settings-module-wifi:before {
+  content: "\e601";
+}
+
+#quick-settings-module-airplane-mode:before {
+  content: "\e602";
+}
+
+#quick-settings-module-bluetooth:before {
+  content: "\e603";
+}
+
+#quick-settings-module-data:before {
+  content: "\e604";
+}
+
+#quick-settings-module-data[data-network="2G"]:before {
+  content: "2G";
+}
+
+#quick-settings-module-data[data-network="3G"]:before {
+  content: "3G";
+}
+
+#quick-settings-module-data[data-network="4G"]:before {
+  content: "4G";
+}
+
+#quick-settings-module-data[data-network="E"]:before {
+  content: "E";
+}
+
+#quick-settings-module-data[data-network="H"]:before {
+  content: "H";
+}
+
+#quick-settings-module-data[data-network="H+"]:before {
+  content: "H+";
+}
+
+#quick-settings-module-data[data-network="O"]:before {
+  content: "O";
+}
+
+#quick-settings-module-full-app:before {
+  content: "\e605";
+}

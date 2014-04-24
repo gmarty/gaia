@@ -121,12 +121,16 @@
   z-index: 8193;
 }
 
-/* Level 5: Statusbar, Utility-Tray */
+/* Level 5: Statusbar, Utility tray and Settings drawer */
 #screen > [data-z-index-level="statusbar"] {
   z-index: 4096;
 }
 
 #screen > [data-z-index-level="utility-tray"] {
+  z-index: 4095;
+}
+
+#screen > [data-z-index-level="settings-drawer"] {
   z-index: 4095;
 }
 

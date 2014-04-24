@@ -171,6 +171,7 @@
    "ril.data.cp.apns": "",
    "ril.callerId": "CLIR_DEFAULT",
    "rocketbar.enabled": false,
+   "settings-drawer.enabled": false,
    "everythingme.api.url": "https://api.everything.me/partners/1.0/{resource}/",
    "screen.automatic-brightness": false,
    "screen.brightness": 1,

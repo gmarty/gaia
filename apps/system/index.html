@@ -124,9 +124,53 @@
     <script defer src="js/input_transition.js"></script>
     <script defer src="js/keyboard_manager.js"></script>
 
-    <!-- Utility Tray -->
+    <!-- Utility Tray: beginning -->
     <link rel="stylesheet" type="text/css" href="style/utility_tray/utility_tray.css">
     <script defer src="js/utility_tray.js"></script>
+
+    <!-- Media Playback -->
+    <link rel="stylesheet" type="text/css" href="style/media_playback/media_playback.css">
+    <script defer src="js/media_playback.js"></script>
+
+    <!-- Cost Control -->
+    <link rel="stylesheet" type="text/css" href="style/cost_control/cost_control.css">
+
+    <!-- Quick Settings -->
+    <link rel="stylesheet" type="text/css" href="style/quick_settings/quick_settings.css">
+    <script defer src="js/quick_settings.js"></script>
+
+    <!-- Downloads -->
+    <link rel="stylesheet" type="text/css" href="style/notifications/downloads.css">
+    <script defer src="js/download/download_manager.js"></script>
+    <!--
+      <script src="shared/js/download/download_helper.js"></script>
+      <script src="shared/js/download/download_ui.js"></script>
+      <script src="shared/js/download/download_formatter.js"></script>
+      <script src="shared/js/download/download_store.js"></script>
+    -->
+    <!-- Utility Tray: end -->
+
+    <!-- Settings Drawer: beginning -->
+    <!-- Quick Settings Module -->
+    <link rel="stylesheet" type="text/css" href="style/settings_drawer/quick_settings_module.css">
+    <script defer src="js/settings_drawer/quick_settings_module.js"></script>
+
+    <!-- Music Module -->
+    <link rel="stylesheet" type="text/css" href="style/settings_drawer/music_module.css">
+    <script defer src="js/settings_drawer/music_module.js"></script>
+
+    <!-- Downloads Module -->
+    <link rel="stylesheet" type="text/css" href="style/settings_drawer/downloads_module.css">
+    <script defer src="js/settings_drawer/downloads_module.js"></script>
+
+    <!-- Cost Control Module -->
+    <link rel="stylesheet" type="text/css" href="style/settings_drawer/cost_control_module.css">
+    <!-- The JS file is lazyloaded, if needed, from js/settings_drawer.js -->
+
+    <link rel="stylesheet" type="text/css" href="style/settings_drawer/icons.css">
+    <link rel="stylesheet" type="text/css" href="style/settings_drawer/settings_drawer.css">
+    <script defer src="js/settings_drawer/settings_drawer.js"></script>
+    <!-- Settings Drawer: end -->
 
     <!-- Attention Screen -->
     <link rel="stylesheet" type="text/css" href="style/attention_screen.css">
@@ -169,10 +213,6 @@
     <script defer src="js/icc_worker.js"></script>
     <script defer src="js/icc.js"></script>
 
-    <!-- Media Playback -->
-    <script defer src="js/media_playback.js"></script>
-    <link rel="stylesheet" type="text/css" href="style/media_playback/media_playback.css">
-
     <!-- LockScreen -->
     <link rel="stylesheet" type="text/css" href="style/lockscreen/lockscreen.css">
     <script defer src="/shared/js/lockscreen_slide.js"></script>
@@ -213,26 +253,9 @@
     <link rel="stylesheet" type="text/css" href="style/app_install_manager/app_install_manager.css">
     <script defer src="js/app_install_manager.js"></script>
 
-    <!-- Cost Control -->
-    <link rel="stylesheet" type="text/css" href="style/cost_control/cost_control.css">
-
-    <!-- Quick Settings -->
-    <link rel="stylesheet" type="text/css" href="style/quick_settings/quick_settings.css">
-    <script defer src="js/quick_settings.js"></script>
-
     <!-- Notifications -->
     <link rel="stylesheet" type="text/css" href="style/notifications/notifications.css">
     <script defer src="js/notifications.js"></script>
-
-    <!-- Downloads -->
-    <link rel="stylesheet" type="text/css" href="style/notifications/downloads.css">
-    <script defer src="js/download/download_manager.js"></script>
-    <!--
-      <script src="shared/js/download/download_helper.js"></script>
-      <script src="shared/js/download/download_ui.js"></script>
-      <script src="shared/js/download/download_formatter.js"></script>
-      <script src="shared/js/download/download_store.js"></script>
-    -->
 
     <!-- Nfc -->
     <script defer src="js/ndef_utils.js"></script>
@@ -488,7 +511,7 @@
       <div id="rocketbar-results" class="hidden" data-z-index-level="rocketbar-results"></div>
 
       <!-- Utility Tray -->
-      <div id="utility-tray" data-z-index-level="utility-tray">
+      <div id="utility-tray" data-z-index-level="utility-tray" hidden>
         <!-- notifications -->
         <div id="notification-bar">
           <span id="notification-some" data-l10n-id="notifications">Notifications</span>
@@ -582,6 +605,44 @@
         </div>
 
         <div id="utility-tray-grippy" role="button" data-l10n-id="utilityTrayGrippy">
+        </div>
+      </div>
+
+      <!-- Settings Drawer -->
+      <div id="settings-drawer" data-z-index-level="settings-drawer" hidden>
+        <!-- Quick Settings Module -->
+        <div id="quick-settings-module" role="toolbar">
+          <ul>
+            <li><a href="#" id="quick-settings-module-wifi" data-enabled="true" role="button"></a></li>
+            <li><a href="#" id="quick-settings-module-airplane-mode" data-enabled="true" role="button"></a></li>
+            <li><a href="#" id="quick-settings-module-bluetooth" data-enabled="true" role="button"></a></li>
+            <li id="quick-settings-module-li-data"><a href="#" id="quick-settings-module-data" data-enabled="true" role="button"></a></li>
+            <li><a href="#" id="quick-settings-module-full-app" role="button" data-l10n-id="settingsButton"></a></li>
+          </ul>
+        </div>
+
+        <div id="modules-container">
+          <!-- Music Module -->
+          <div id="music-module" hidden>
+            <div class="media-playback-nowplaying">
+              <div class="description"></div>
+            </div>
+            <div class="media-playback-controls">
+              <button class="rewind"></button>
+              <button class="play"></button>
+              <button class="forward"></button>
+            </div>
+          </div>
+
+          <!-- Download Module -->
+          <div id="download-module">
+            <a href="#" id="settings-drawer-downloads" data-l10n-id="downloads">Downloads</a><span class="chevron"></span>
+          </div>
+
+          <!-- Cost Control Module -->
+          <div id="cost-control-module" hidden>
+          </div>
+
         </div>
       </div>
 

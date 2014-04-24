@@ -33,6 +33,7 @@ var UtilityTray = {
     window.addEventListener('launchapp', this);
     window.addEventListener('displayapp', this);
     window.addEventListener('appopening', this);
+    window.addEventListener('settingsdrawershow', this);
 
     // Firing when the keyboard and the IME switcher shows/hides.
     window.addEventListener('keyboardimeswitchershow', this);
@@ -55,6 +56,8 @@ var UtilityTray = {
     if (window.navigator.mozMobileConnections) {
       window.LazyLoader.load('js/cost_control.js');
     }
+
+   this.overlay.removeAttribute('hidden');
   },
 
   startY: undefined,
@@ -80,6 +83,7 @@ var UtilityTray = {
       case 'simpinshow':
       case 'appopening':
       case 'launchapp':
+      case 'settingsdrawershow':
         if (this.shown) {
           this.hide();
         }
