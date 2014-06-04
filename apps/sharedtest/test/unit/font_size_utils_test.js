@@ -98,6 +98,7 @@ suite('shared/js/text_utils.js', function() {
     // use maximum header fontSize
     var sizes = FontSizeUtils.getAllowedSizes(headerText);
     headerText.style.fontSize = sizes[sizes.length - 1] + 'px';
+    headerText.style.fontFamily = kDefaultFace;
     return headerText;
   }
 
@@ -128,6 +129,7 @@ suite('shared/js/text_utils.js', function() {
     // use maximum header fontSize
     var sizes = FontSizeUtils.getAllowedSizes(headerText);
     headerText.style.fontSize = sizes[sizes.length - 1] + 'px';
+    headerText.style.fontFamily = kDefaultFace;
     return headerText;
   }
 
@@ -136,6 +138,7 @@ suite('shared/js/text_utils.js', function() {
     element.style.overflow = 'hidden';
     element.style.textOverflow = 'ellipsis';
     element.style.width = kContainerWidth + 'px';
+    element.style.fontFamily = kDefaultFace;
     return element;
   }
 
@@ -339,8 +342,7 @@ suite('shared/js/text_utils.js', function() {
       assert.equal(fontSizeBefore, getComputedStyle(el).fontSize);
     });
 
-    // This one doesn't pass and is driving me crazy so commenting out for now.
-    /*test('Should not resize a medium header title', function() {
+    test('Should not resize a medium header title', function() {
       var el = setupHeaderElement();
       var fontSizeBefore = getComputedStyle(el).fontSize;
 
@@ -349,7 +351,7 @@ suite('shared/js/text_utils.js', function() {
 
       assert.isFalse(autoResizeNeeded);
       assert.equal(fontSizeBefore, getComputedStyle(el).fontSize);
-    });*/
+    });
 
     test('Should resize a barely overflowing header title', function() {
       var el = setupHeaderElement();
@@ -454,7 +456,7 @@ suite('shared/js/text_utils.js', function() {
             getMaxHeaderFontSize());
 
           // Clean up.
-          el.parentNode.removeChild(el);
+          document.body.removeChild(el.parentNode);
           done();
         });
       });
@@ -649,7 +651,7 @@ suite('shared/js/text_utils.js', function() {
       el.textContent = setupLargeString();
 
       var stub = sinon.stub(FontSizeUtils, 'autoResizeElement', function() {
-        el.parentNode.removeChild(el);
+        document.body.removeChild(el.parentNode);
         stub.restore();
         assert.isTrue(stub.calledWith(el));
         done();
@@ -665,7 +667,7 @@ suite('shared/js/text_utils.js', function() {
       assert.isTrue(spy.notCalled);
 
       el.addEventListener('overflow', function() {
-        el.parentNode.removeChild(el);
+        document.body.removeChild(el);
         spy.restore();
         assert.isTrue(spy.notCalled);
         done();
@@ -695,7 +697,7 @@ suite('shared/js/text_utils.js', function() {
             getMaxHeaderFontSize());
 
           // Clean up.
-          el.parentNode.removeChild(el);
+          document.body.removeChild(el.parentNode);
           done();
         });
       });

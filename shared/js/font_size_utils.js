@@ -286,23 +286,6 @@
       var sideSpaceRight = FontSizeUtils.containerWidth - sideSpaceLeft -
         headerWidth;
 
-      /*var parent = element.parentNode;
-      var sideSpaceRight = 0;
-      if (parent) {
-        for (var i = 0; i < parent.children.length; i++) {
-          var child = parent.children[i];
-          if (child === element) {
-            continue;
-          }
-          var childStyle = window.getComputedStyle(child);
-          if (childStyle.cssFloat !== 'right') {
-            continue;
-          }
-
-          sideSpaceRight += parseInt(childStyle.width, 10);
-        }
-      }*/
-
       var margin = Math.max(sideSpaceLeft, sideSpaceRight);
 
       /*console.log('containerWidth', FontSizeUtils.containerWidth,
