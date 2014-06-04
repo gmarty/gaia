@@ -8,6 +8,8 @@
     16, 17, 18, 19, 20, 21, 22, 23
   ];
 
+  var _screenWidth = 0;
+
   /**
    * Utility functions for measuring and manipulating font sizes
    */
@@ -168,7 +170,7 @@
      */
     getAllowedSizes: function(element) {
       if (element.tagName === 'H1' && element.parentNode &&
-          element.parentNode.tagName === 'HEADER') {
+        element.parentNode.tagName === 'HEADER') {
         return HEADER_SIZES;
       }
       // No allowed sizes for this element, so return empty array.
@@ -188,8 +190,8 @@
       }
       var style = window.getComputedStyle(element);
       var info = this.getMaxFontSizeInfo(element.textContent, allowedSizes,
-                                         style.fontFamily,
-                                         parseInt(style.width, 10));
+        style.fontFamily,
+        parseInt(style.width, 10));
       element.style.fontSize = info.fontSize + 'px';
 
       // Return true if we have resized to less than our max fontSize given
@@ -281,33 +283,34 @@
 
       // Get the width of side buttons.
       var sideSpaceLeft = element.offsetLeft;
-      var sideSpaceRight = screen.width -
-        sideSpaceLeft - headerWidth;
+      var sideSpaceRight = FontSizeUtils.containerWidth - sideSpaceLeft -
+        headerWidth;
 
-      //var parent = element.parentNode;
-      //if (parent) {
-      //  for (var i = 0; i < parent.children.length; i++) {
-      //    var child = parent.children[i];
-      //    if (child === element) {
-      //      continue;
-      //    }
-      //    var childStyle = window.getComputedStyle(child);
-      //    if (childStyle.cssFloat !== 'right') {
-      //      continue;
-      //    }
+      /*var parent = element.parentNode;
+      var sideSpaceRight = 0;
+      if (parent) {
+        for (var i = 0; i < parent.children.length; i++) {
+          var child = parent.children[i];
+          if (child === element) {
+            continue;
+          }
+          var childStyle = window.getComputedStyle(child);
+          if (childStyle.cssFloat !== 'right') {
+            continue;
+          }
 
-      //    sideSpaceRight += parseInt(childStyle.width, 10);
-      //  }
-      //}
+          sideSpaceRight += parseInt(childStyle.width, 10);
+        }
+      }*/
 
       var margin = Math.max(sideSpaceLeft, sideSpaceRight);
 
-      console.log('containerWidth', screen.width, 'headerWidth',
-        headerWidth, 'textWidth', textWidth, 'margin', margin,
-          '= max(' + sideSpaceLeft + ', ' + sideSpaceRight + ')');
+      /*console.log('containerWidth', FontSizeUtils.containerWidth,
+        'headerWidth', headerWidth, 'textWidth', textWidth, 'margin', margin,
+          '= max(' + sideSpaceLeft + ', ' + sideSpaceRight + ')');*/
 
       // Can the header be centered?
-      if (textWidth + (margin * 2) <= screen.width) {
+      if (textWidth + (margin * 2) <= FontSizeUtils.containerWidth) {
         /*console.log(textWidth, '+', (margin * 2), '<=',
           FontSizeUtils.containerWidth);*/
         console.log('Header centered');
@@ -326,7 +329,7 @@
      * Initialize the FontSizeUtils, add overflow handler and perform
      * auto resize once strings have been localized.
      */
-    init: function () {
+    init: function() {
       // Add overflow listener once document body is ready.
       if (document.readyState === 'loading') {
         window.addEventListener('DOMContentLoaded', function() {
@@ -347,25 +350,25 @@
       }.bind(this));
     },
 
-//    /**
-//     * Return the screen width.
-//     *
-//     * @returns {number}
-//     */
-//    get containerWidth() {
-//      if (_screenWidth === 0) {
-//        _screenWidth = screen.width;
-//      }
-//      return _screenWidth;
-//    },
-//
-//    /**
-//     * For unit testing purposes only.
-//     * @param {number} value
-//     */
-//    set containerWidth(value) {
-//      _screenWidth = value;
-//    }
+    /**
+     * Return the screen width.
+     *
+     * @returns {number}
+     */
+    get containerWidth() {
+      if (_screenWidth === 0) {
+        _screenWidth = screen.width;
+      }
+      return _screenWidth;
+    },
+
+    /**
+     * For unit testing purposes only.
+     * @param {number} value
+     */
+    set containerWidth(value) {
+      _screenWidth = value;
+    }
   };
 
   FontSizeUtils.init();
