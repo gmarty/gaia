@@ -90,6 +90,7 @@ suite('shared/js/text_utils.js', function() {
   function setupHeaderElement() {
     var header = document.createElement('header');
     var headerText = document.createElement('h1');
+
     header.appendChild(headerText);
 
     headerText.style.overflow = 'hidden';
@@ -105,7 +106,6 @@ suite('shared/js/text_utils.js', function() {
   function setupHeaderElementWithButtons() {
     var headerText = setupHeaderElement();
     var header = headerText.parentNode;
-
     var leftButton = document.createElement('button');
     var rightButton = document.createElement('button');
 
@@ -130,7 +130,11 @@ suite('shared/js/text_utils.js', function() {
   }
 
   function setupNonHeaderElement() {
+    var parent = document.createElement('div');
     var element = document.createElement('h1');
+
+    parent.appendChild(element);
+
     element.style.overflow = 'hidden';
     element.style.textOverflow = 'ellipsis';
     element.style.width = kContainerWidth + 'px';
@@ -156,7 +160,6 @@ suite('shared/js/text_utils.js', function() {
     FontSizeUtils.resetCache();
   });
 
-  /* Global */
   suite('Global', function() {
     test('FontSizeUtils exists', function() {
       assert.ok(FontSizeUtils);
@@ -459,39 +462,6 @@ suite('shared/js/text_utils.js', function() {
     });
   });
 
-  suite('FontSizeUtils.getElementWidth', function() {
-    var el;
-
-    setup(function() {
-      el = document.createElement('div');
-      el.style.width = '50px';
-      el.style.padding = '10px';
-      document.body.appendChild(el);
-    });
-
-    teardown(function() {
-      document.body.removeChild(el);
-    });
-
-    test('Should compute the width of content-box element', function() {
-      el.style.boxSizing = 'content-box';
-      var styleWidth = parseInt(getComputedStyle(el).width, 10);
-      var actualWidth = FontSizeUtils.getElementWidth(el);
-
-      assert.equal(styleWidth, 50);
-      assert.equal(actualWidth, 70);
-    });
-
-    test('Should compute the width of border-box element', function() {
-      el.style.boxSizing = 'border-box';
-      var styleWidth = parseInt(getComputedStyle(el).width, 10);
-      var actualWidth = FontSizeUtils.getElementWidth(el);
-
-      assert.equal(styleWidth, 50);
-      assert.equal(actualWidth, 50);
-    });
-  });
-
   suite('FontSizeUtils.centerTextToScreen', function() {
     suiteSetup(function() {
       // Body often has a default margin which needs to be removed
@@ -504,8 +474,6 @@ suite('shared/js/text_utils.js', function() {
     });
 
     test('Should center a small header title', function() {
-      console.log('Small');
-
       var el = setupHeaderElementWithButtons();
       var fontSizeBefore = getComputedStyle(el).fontSize;
 
@@ -523,8 +491,6 @@ suite('shared/js/text_utils.js', function() {
     });
 
     test('Should not center a medium header title', function() {
-      console.log('Medium');
-
       var el = setupHeaderElementWithButtons();
       var fontSizeBefore = getComputedStyle(el).fontSize;
 
@@ -541,8 +507,6 @@ suite('shared/js/text_utils.js', function() {
     });
 
     test('Should not center a barely overflowing header title', function() {
-      console.log('MediumPlus');
-
       var el = setupHeaderElementWithButtons();
       var fontSizeBefore = getComputedStyle(el).fontSize;
 
@@ -559,8 +523,6 @@ suite('shared/js/text_utils.js', function() {
     });
 
     test('Should not center a very long header title', function() {
-      console.log('Large');
-
       var el = setupHeaderElementWithButtons();
       var fontSizeBefore = getComputedStyle(el).fontSize;
 
@@ -651,14 +613,14 @@ suite('shared/js/text_utils.js', function() {
 
     test('Non-header overflow should not cause auto-resize', function(done) {
       var el = setupNonHeaderElement();
-      document.body.appendChild(el);
+      document.body.appendChild(el.parentNode);
       el.textContent = setupLargeString();
 
       var spy = sinon.spy(FontSizeUtils, 'autoResizeElement');
       assert.isTrue(spy.notCalled);
 
       el.addEventListener('overflow', function() {
-        document.body.removeChild(el);
+        document.body.removeChild(el.parentNode);
         spy.restore();
         assert.isTrue(spy.notCalled);
         done();

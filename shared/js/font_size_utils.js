@@ -4,7 +4,7 @@
   /**
    * Allowable font sizes for header elements.
    */
-  var HEADER_SIZES = [
+  const HEADER_SIZES = [
     16, 17, 18, 19, 20, 21, 22, 23
   ];
 
@@ -167,8 +167,7 @@
      * @return {Array} An array containing pizels values of allowed sizes.
      */
     getAllowedSizes: function(element) {
-      if (element.tagName === 'H1' && element.parentNode &&
-        element.parentNode.tagName === 'HEADER') {
+      if (element.tagName === 'H1' && element.parentNode.tagName === 'HEADER') {
         return HEADER_SIZES;
       }
       // No allowed sizes for this element, so return empty array.
@@ -186,10 +185,14 @@
       if (allowedSizes.length === 0) {
         return false;
       }
+
       var style = window.getComputedStyle(element);
-      var info = this.getMaxFontSizeInfo(element.textContent, allowedSizes,
+      var info = this.getMaxFontSizeInfo(
+        element.textContent,
+        allowedSizes,
         style.fontFamily,
-        parseInt(style.width, 10));
+        parseInt(style.width, 10)
+      );
       element.style.fontSize = info.fontSize + 'px';
 
       // Return true if we have resized to less than our max fontSize given
@@ -213,32 +216,16 @@
      * @param {HTMLElement} header h1 text inside header to reformat.
      */
     reformatHeaderText: function(header) {
-      FontSizeUtils.resetFormatting(header);
+      this.resetFormatting(header);
 
-      var autoResizeNeeded = FontSizeUtils.autoResizeElement(header);
+      var autoResizeNeeded = this.autoResizeElement(header);
       if (autoResizeNeeded) {
         // We need to listen for textContent changes so that we can
         // auto resize to a larger fontSize if space allows it.
-        FontSizeUtils._resizeOnTextChange(header);
+        this._resizeOnTextChange(header);
       }
 
-      FontSizeUtils.centerTextToScreen(header);
-    },
-
-    /**
-     * Get an element width disregarding its box model sizing.
-     *
-     * @param {HTMLElement} element
-     * @returns {Number}
-     */
-    getElementWidth: function(element) {
-      var style = window.getComputedStyle(element);
-      var width = parseInt(style.width, 10);
-      if (style.boxSizing === 'content-box') {
-        width += parseInt(style.paddingRight, 10) +
-          parseInt(style.paddingLeft, 10);
-      }
-      return width;
+      this.centerTextToScreen(header);
     },
 
     /**
@@ -248,47 +235,32 @@
      */
     centerTextToScreen: function(element) {
       // Get header and text widths.
-      // YYY: FYI, this line always triggers a reflow (~1ms on a Flame).
-      var headerWidth = FontSizeUtils.getElementWidth(element);
+      var headerWidth = element.clientWidth;
 
+      var allowedSizes = this.getAllowedSizes(element);
       var style = window.getComputedStyle(element);
-      var allowedSizes = FontSizeUtils.getAllowedSizes(element);
-      var info = FontSizeUtils.getMaxFontSizeInfo(
+      var info = this.getMaxFontSizeInfo(
         element.textContent,
         allowedSizes,
         style.fontFamily,
         parseInt(style.width, 10)
       );
 
-      // If there are padding on each side, so we need to add their values.
+      // If there are padding on each side, we need to add their values.
       var textWidth = info.textWidth +
         parseInt(style.paddingRight, 10) +
         parseInt(style.paddingLeft, 10);
 
       // Get the width of side buttons.
       var sideSpaceLeft = element.offsetLeft;
-      var sideSpaceRight = FontSizeUtils.getScreenWidth() - sideSpaceLeft -
+      var sideSpaceRight = this.getScreenWidth() - sideSpaceLeft -
         headerWidth;
 
       var margin = Math.max(sideSpaceLeft, sideSpaceRight);
 
-      console.log('screen widith', FontSizeUtils.getScreenWidth(),
-        'headerWidth', headerWidth, 'textWidth', textWidth, 'margin', margin,
-          '= max(' + sideSpaceLeft + ', ' + sideSpaceRight + ')');
-
       // Can the header be centered?
-      if (textWidth + (margin * 2) <= FontSizeUtils.getScreenWidth()) {
-        /*console.log(textWidth, '+', (margin * 2), '<=',
-          FontSizeUtils.getScreenWidth());*/
-        console.log('Header centered');
+      if (textWidth + (margin * 2) <= this.getScreenWidth()) {
         element.style.marginLeft = element.style.marginRight = margin + 'px';
-      } else if (textWidth <= headerWidth) {
-        //console.log(textWidth, '<=', headerWidth);
-        console.log('Header not centered');
-        // Do nothing, just for better debugging.
-      } else if (textWidth > headerWidth) {
-        //console.log(textWidth, '>', headerWidth);
-        console.log('Header not centered and truncated');
       }
     },
 
@@ -302,8 +274,7 @@
       // This check should really be in its own function, but as a
       // performance optimization we will avoid the overhead of any
       // additional function call by doing this check inline.
-      if (element.tagName === 'H1' && element.parentNode &&
-        element.parentNode.tagName === 'HEADER') {
+      if (element.tagName === 'H1' && element.parentNode.tagName === 'HEADER') {
         this.reformatHeaderText(element);
       }
     },
@@ -329,6 +300,7 @@
         var headers = document.querySelectorAll('header > h1');
         for (var i = 0; i < headers.length; i++) {
           this.autoResizeElement(headers[i]);
+          this.centerTextToScreen(headers[i]);
         }
       }.bind(this));
     },
