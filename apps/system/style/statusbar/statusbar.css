@@ -97,6 +97,10 @@ body #statusbar {
   white-space: nowrap;
 }
 
+#statusbar-icons .hidden-by-priority {
+  display: none;
+}
+
 #screen.rocketbar-focused:not(.locked) #statusbar-icons,
 #screen.rocketbar-expanded.cards-view #statusbar-icons {
   visibility: hidden;
