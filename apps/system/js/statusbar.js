@@ -14,13 +14,17 @@
   limitations under the License.
 */
 
-/*global Clock, AppWindowManager, SettingsListener */
-/*global SimPinDialog, TouchForwarder, FtuLauncher */
-/*global MobileOperator, SIMSlotManager, System */
-/*global Bluetooth */
-/*global UtilityTray */
+/*global Clock, AppWindowManager, SettingsListener, SimPinDialog,
+         TouchForwarder, FtuLauncher, MobileOperator, SIMSlotManager, System,
+         Bluetooth, UtilityTray */
 
 'use strict';
+
+function toCamelCase(str) {
+  return str.replace(/\-(.)/g, function replacer(str, p1) {
+    return p1.toUpperCase();
+  });
+}
 
 var StatusBar = {
   /* all elements that are children nodes of the status bar */
@@ -29,6 +33,64 @@ var StatusBar = {
     'alarm', 'bluetooth', 'mute', 'headphones', 'bluetooth-headphones',
     'bluetooth-transferring', 'recording', 'sms', 'geolocation', 'usb', 'label',
     'system-downloads', 'call-forwardings', 'playing', 'nfc'],
+
+  PRIORITIES: [
+    'emergency-cb-notification',
+    //'SOS?', // ?
+    'battery',
+    'recording',
+    'flight-mode',
+    'wifi',
+    'connections',
+    'time',
+    'geolocation',
+    'network-activity',
+    'tethering',
+    'system-downloads',
+    'bluetooth-transferring',
+    'bluetooth',
+    'nfc',
+    'usb',
+    'notification',
+    'alarm',
+    'bluetooth-headphones',
+    'mute',
+    'call-forwardings',
+    'playing',
+    'headphones',
+    //'sms',
+    'label'
+  ],
+
+  WIDTHS: {
+    'emergency-cb-notification': 16 + 5,
+    //'SOS?': 16 + 5, // ?
+    'battery': 25 + 5,
+    'recording': 16 + 5,
+    'flight-mode': 16 + 5,
+    'wifi': 16 + 5,
+    //'connections': 66 + 5, // Width can change
+    //'time': 45 + 5, // Width can change
+    'geolocation': 16 + 5,
+    'network-activity': 16 + 5,
+    'tethering': 16 + 5,
+    'system-downloads': 16 + 5,
+    'bluetooth-transferring': 16 + 5,
+    'bluetooth': 16 + 5,
+    'nfc': 16 + 5,
+    'usb': 16 + 5,
+    'notification': 32 + 5,
+    'alarm': 16 + 5,
+    'bluetooth-headphones': 16 + 5,
+    'mute': 16 + 5,
+    //'call-forwardings': 56 + 5, // Width can change
+    'playing': 16 + 5,
+    'headphones': 16 + 5,
+    //'sms': 16 + 5,
+    //'label': 37 + 5, // Width can change
+  },
+
+  TO_CAMEL_CASE: {},
 
   /* Timeout for 'recently active' indicators */
   kActiveIndicatorTimeout: 5 * 1000,
@@ -111,6 +173,22 @@ var StatusBar = {
 
     this.listeningCallschanged = false;
 
+    // Caching the camel case conversion.
+    this.PRIORITIES.forEach(function(element) {
+      this.TO_CAMEL_CASE[element] = toCamelCase(element);
+    }.bind(this));
+
+    function update(elt) {
+      return function() {
+        this._update[elt].apply(this, arguments);
+        this._updateIcons();
+        console.log('After rendering ' + elt);
+      };
+    }
+    for (var elt in this._update) {
+      this.update[elt] = update(elt);
+    }
+
     // Refresh the time to reflect locale changes
     this.toggleTimeLabel(true);
 
@@ -145,6 +223,7 @@ var StatusBar = {
     for (var key in settings) {
       setSettingsListener(key);
     }
+
     // Listen to 'attentionscreenshow/hide' from attention_screen.js
     window.addEventListener('attentionscreenshow', this);
     window.addEventListener('attentionscreenhide', this);
@@ -192,6 +271,9 @@ var StatusBar = {
 
     window.addEventListener('simpinshow', this);
     window.addEventListener('simpinclose', this);
+
+    // Listen to orientation change.
+    window.addEventListener('resize', this);
 
     // We need to preventDefault on mouse events until
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1005815 lands
@@ -245,7 +327,7 @@ var StatusBar = {
       case 'lockpanelchange':
         if (this.screen.classList.contains('locked')) {
           // Display the clock in the statusbar if on Emergency Call screen
-          var isHidden = (evt.detail.panel == 'emergency-call') ? false : true;
+          var isHidden = (evt.detail.panel != 'emergency-call');
           this.toggleTimeLabel(!isHidden);
         }
         break;
@@ -373,6 +455,11 @@ var StatusBar = {
       case 'simpinclose':
         this.setAppearance('semi-transparent');
         break;
+
+      case 'resize':
+        // Reprioritize icons when orientation changes.
+        this._updateIcons();
+        break;
     }
   },
 
@@ -383,6 +470,72 @@ var StatusBar = {
   _touchForwarder: new TouchForwarder(),
   _shouldForwardTap: false,
   _dontStopEvent: false,
+
+  _getMaxWidth: function sb_getMaxWidth() {
+    return window.innerWidth;
+  },
+
+  _getMinWidth: function sb_getMinWidth() {
+    // The title/status bar takes approx. 50% of the total screen width.
+    return ((window.innerWidth - 80) * 0.6521) + 5;
+  },
+
+  _updateIcons: function sb_updateIcons() {
+    // Let's refresh the clone.
+    this.cloneStatusbar();
+
+    var maxWidth = this._getMaxWidth();
+    var minWidth = this._getMinWidth();
+
+    console.log('Width()', maxWidth, minWidth);
+
+    this.PRIORITIES.forEach(function(iconId) {
+      var icon = this.icons[this.TO_CAMEL_CASE[iconId]];
+      if (icon === undefined) {
+        console.error('Missing icon', iconId);
+        return;
+      }
+
+      var className = 'sb-hide-' + iconId;
+
+      if (!icon.hidden) {
+        if (maxWidth <= 0) {
+          this.statusbarIcons.classList.add(className);
+          return;
+        }
+        if (minWidth <= 0) {
+          this.statusbarIconsMin.classList.add(className);
+        }
+
+        this.statusbarIcons.classList.remove(className);
+        this.statusbarIconsMin.classList.remove(className);
+        var iconWidth = 0;
+        if (this.WIDTHS[iconId] !== undefined) {
+          iconWidth = this.WIDTHS[iconId];
+        } else {
+          // The width of this icon is not static.
+          var style = window.getComputedStyle(icon);
+          iconWidth = icon.clientWidth +
+            parseInt(style.marginLeft, 10) +
+            parseInt(style.marginRight, 10);
+        }
+
+        maxWidth -= iconWidth;
+        minWidth -= iconWidth;
+
+        console.log(iconId, icon.hidden, maxWidth, minWidth);
+
+        if (maxWidth <= 0) {
+          this.statusbarIcons.classList.add(className);
+          return;
+        }
+        if (minWidth <= 0) {
+          this.statusbarIconsMin.classList.add(className);
+        }
+      }
+    }.bind(this));
+  },
+
   panelHandler: function sb_panelHandler(evt) {
     var app = AppWindowManager.getActiveApp().getTopMostWindow();
     var titleBar = app.element.querySelector('.titlebar');
@@ -463,7 +616,6 @@ var StatusBar = {
           this._touchForwarder.forward(evt);
           this._releaseAfterTimeout(titleBar);
         }
-
         break;
     }
   },
@@ -570,6 +722,8 @@ var StatusBar = {
     }
   },
 
+  // Methods not changing the visibility of any icon can be kept in `update`,
+  // others need to be moved over `_update`.
   update: {
     iconData: function sb_updateIconData(aData) {
       var dataIconValues = this.settingValues['operatorResources.data.icon'];
@@ -644,7 +798,6 @@ var StatusBar = {
 
       var icon = this.icons.battery;
 
-      icon.hidden = false;
       icon.dataset.charging = battery.charging;
       var level = Math.floor(battery.level * 10) * 10;
       icon.dataset.level = level;
@@ -654,6 +807,20 @@ var StatusBar = {
         }));
     },
 
+    vibration: function sb_vibration() {
+      var icon = this.icons.mute;
+      var vibrate = (this.settingValues['vibration.enabled'] === true);
+      if (vibrate) {
+        icon.classList.add('vibration');
+        this.updateIconLabel(icon, 'vibration');
+      } else {
+        icon.classList.remove('vibration');
+        this.updateIconLabel(icon, 'mute');
+      }
+    }
+  },
+
+  _update: {
     networkActivity: function sb_updateNetworkActivity() {
       // Each time we receive an update, make network activity indicator
       // show up for 500ms.
@@ -740,16 +907,18 @@ var StatusBar = {
         }
       }
 
+      this.udpateConnectionsVisibility();
       this.refreshCallListener();
     },
 
     data: function sb_updateSignal() {
+      var self = this;
       var conns = window.navigator.mozMobileConnections;
       if (!conns) {
+        this.udpateConnectionsVisibility();
         return;
       }
 
-      var self = this;
       for (var index = 0; index < conns.length; index++) {
         var conn = conns[index];
         var data = conn.data;
@@ -790,9 +959,9 @@ var StatusBar = {
         icon.setAttribute('aria-hidden', !!icon.textContent);
       }
 
+      this.udpateConnectionsVisibility();
       this.refreshCallListener();
     },
-
 
     wifi: function sb_updateWifi() {
       var wifiManager = window.navigator.mozWifiManager;
@@ -880,7 +1049,8 @@ var StatusBar = {
     },
 
     alarm: function sb_updateAlarm() {
-      this.icons.alarm.hidden = !this.settingValues['alarm.enabled'];
+      var icon = this.icons.alarm;
+      icon.hidden = !this.settingValues['alarm.enabled'];
     },
 
     mute: function sb_updateMute() {
@@ -889,18 +1059,6 @@ var StatusBar = {
       this.updateIconLabel(icon,
         (this.settingValues['vibration.enabled'] === true) ?
           'vibration' : 'mute');
-    },
-
-    vibration: function sb_vibration() {
-      var icon = this.icons.mute;
-      var vibrate = (this.settingValues['vibration.enabled'] === true);
-      if (vibrate) {
-        icon.classList.add('vibration');
-        this.updateIconLabel(icon, 'vibration');
-      } else {
-        icon.classList.remove('vibration');
-        this.updateIconLabel(icon, 'mute');
-      }
     },
 
     recording: function sb_updateRecording() {
@@ -964,13 +1122,14 @@ var StatusBar = {
     },
 
     callForwarding: function sb_updateCallForwarding() {
-      var icons = this.icons.callForwardings;
+      var icons = this.icons.callForwardingsElements;
       var states = this.settingValues['ril.cf.enabled'];
       if (states) {
         states.forEach(function(state, index) {
           icons[index].hidden = !state;
         });
       }
+      this.udpatecallForwardingsVisibility();
     },
 
     playing: function sb_updatePlaying() {
@@ -982,6 +1141,33 @@ var StatusBar = {
       var icon = this.icons.nfc;
       icon.hidden = !this.nfcActive;
     }
+  },
+
+  udpateConnectionsVisibility: function sb_udpateConnectionsVisibility() {
+    // Iterate through connections children and show the container if at least
+    // one of them is visible.
+    var conns = window.navigator.mozMobileConnections;
+    for (var index = 0; index <= conns.length; index++) {
+      if (!this.icons.signals[index].hidden ||
+        !this.icons.data[index].hidden) {
+        this.icons.connections.hidden = false;
+        return;
+      }
+    }
+    this.icons.connections.hidden = true;
+  },
+
+  udpatecallForwardingsVisibility: function sb_udpateCallFwdingsVisibility() {
+    // Iterate through connections children and show the container if at least
+    // one of them is visible.
+    var conns = window.navigator.mozMobileConnections;
+    for (var index = 0; index <= conns.length; index++) {
+      if (!this.icons.callForwardingsElements[index].hidden) {
+        this.icons.callForwardings.hidden = false;
+        return;
+      }
+    }
+    this.icons.callForwardings.hidden = true;
   },
 
   hasActiveCall: function sb_hasActiveCall() {
@@ -1015,6 +1201,7 @@ var StatusBar = {
   refreshCallListener: function sb_refreshCallListener() {
     // Listen to callschanged only when connected to CDMA networks and emergency
     // calls.
+    var self = this;
     var conns = window.navigator.mozMobileConnections;
     if (!conns) {
       return;
@@ -1022,7 +1209,6 @@ var StatusBar = {
 
     var emergencyCallsOnly = false;
     var cdmaConnection = false;
-    var self = this;
     Array.prototype.slice.call(conns).forEach(function(conn) {
       emergencyCallsOnly = emergencyCallsOnly ||
         (conn && conn.voice && conn.voice.emergencyCallsOnly);
@@ -1130,16 +1316,9 @@ var StatusBar = {
 
   getAllElements: function sb_getAllElements() {
     // ID of elements to create references
-
-    var toCamelCase = function toCamelCase(str) {
-      return str.replace(/\-(.)/g, function replacer(str, p1) {
-        return p1.toUpperCase();
-      });
-    };
-
     this.ELEMENTS.forEach((function createElementRef(name) {
       this.icons[toCamelCase(name)] =
-        document.getElementById('statusbar-' + name);
+        document.querySelector('.sb-icon-' + name);
     }).bind(this));
 
     var conns = window.navigator.mozMobileConnections;
@@ -1147,8 +1326,7 @@ var StatusBar = {
       var multipleSims = SIMSlotManager.isMultiSIM();
 
       // Create signal elements based on the number of SIM slots.
-      var sbConnections = document.getElementById('statusbar-connections');
-      sbConnections.dataset.multiple = multipleSims;
+      this.icons.connections.dataset.multiple = multipleSims;
       this.icons.signals = {};
       this.icons.data = {};
       for (var i = conns.length - 1; i >= 0; i--) {
@@ -1164,36 +1342,51 @@ var StatusBar = {
         data.className = 'sb-icon statusbar-data';
         data.hidden = true;
 
-        sbConnections.appendChild(signal);
-        sbConnections.appendChild(data);
+        this.icons.connections.appendChild(signal);
+        this.icons.connections.appendChild(data);
         this.icons.signals[i] = signal;
         this.icons.data[i] = data;
       }
 
-      // Create call forwarding icons
-      var sbCallForwardings =
-        document.getElementById('statusbar-call-forwardings');
-      sbCallForwardings.dataset.multiple = multipleSims;
-      this.icons.callForwardings = {};
-      for (var idx = conns.length - 1; idx >= 0; idx--) {
+      // Create call forwarding icons.
+      this.icons.callForwardings.dataset.multiple = multipleSims;
+      this.icons.callForwardingsElements = {};
+      for (i = conns.length - 1; i >= 0; i--) {
         var callForwarding = document.createElement('div');
         callForwarding.className = 'sb-icon sb-icon-call-forwarding';
         if (multipleSims) {
-          callForwarding.dataset.index = idx + 1;
+          callForwarding.dataset.index = i + 1;
         }
         callForwarding.setAttribute('role', 'listitem');
         callForwarding.setAttribute('aria-label', 'statusbarForwarding');
-        sbCallForwardings.appendChild(callForwarding);
-        this.icons.callForwardings[idx] = callForwarding;
+        this.icons.callForwardings.appendChild(callForwarding);
+        this.icons.callForwardingsElements[i] = callForwarding;
       }
+
+      this.udpateConnectionsVisibility();
+      this.udpatecallForwardingsVisibility();
     }
 
     this.element = document.getElementById('statusbar');
     this.background = document.getElementById('statusbar-background');
     this.statusbarIcons = document.getElementById('statusbar-icons');
+    this.statusbarIconsMax = document.getElementById('statusbar-maximised');
     this.screen = document.getElementById('screen');
     this.attentionBar = document.getElementById('attention-bar');
     this.topPanel = document.getElementById('top-panel');
+
+    // Dummy element used at initialisation.
+    this.statusbarIconsMin = document.createElement('div');
+    this.statusbarIcons.appendChild(this.statusbarIconsMin);
+
+    this.cloneStatusbar();
+  },
+
+  cloneStatusbar: function() {
+    this.statusbarIcons.removeChild(this.statusbarIconsMin);
+    this.statusbarIconsMin = this.statusbarIconsMax.cloneNode(true);
+    this.statusbarIconsMin.setAttribute('id', 'statusbar-minimised');
+    this.statusbarIcons.appendChild(this.statusbarIconsMin);
   },
 
   // To reduce the duplicated code
