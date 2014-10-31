@@ -1213,7 +1213,7 @@ var StatusBar = {
       sbConnections.dataset.multiple = multipleSims;
       this.icons.signals = {};
       this.icons.data = {};
-      for (var i = conns.length - 1; i >= 0; i--) {
+      for (var i = 0; i < conns.length; i++) {
         var signal = document.createElement('div');
         var data = document.createElement('div');
         signal.className = 'sb-icon sb-icon-signal statusbar-signal';
@@ -1226,8 +1226,8 @@ var StatusBar = {
         data.className = 'sb-icon statusbar-data';
         data.hidden = true;
 
-        sbConnections.appendChild(signal);
         sbConnections.appendChild(data);
+        sbConnections.appendChild(signal);
         this.icons.signals[i] = signal;
         this.icons.data[i] = data;
       }
@@ -1237,7 +1237,7 @@ var StatusBar = {
         document.getElementById('statusbar-call-forwardings');
       sbCallForwardings.dataset.multiple = multipleSims;
       this.icons.callForwardings = {};
-      for (var i = conns.length - 1; i >= 0; i--) {
+      for (var i = 0; i < conns.length; i++) {
         var callForwarding = document.createElement('div');
         callForwarding.className = 'sb-icon sb-icon-call-forwarding';
         if (multipleSims) {

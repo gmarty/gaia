@@ -77,6 +77,7 @@ body:not(.rb-enabled) #statusbar {
 #statusbar-icons > * {
   float: right;
   margin: 0 0.2rem 0 0.3rem;
+  /*flex: 0 1 auto;*/
 }
 
 #statusbar-icons {
@@ -90,6 +91,8 @@ body:not(.rb-enabled) #statusbar {
   transition: opacity 0.3s;
   overflow: hidden;
   white-space: nowrap;
+  display: flex;
+  flex-direction: row-reverse;
 }
 
 #screen.rocketbar-focused:not(.locked) #statusbar-icons,
@@ -119,6 +122,7 @@ body:not(.rb-enabled) #statusbar-icons > .sb-start {
 *[dir=rtl] #statusbar-icons {
   right: auto;
   left: 0;
+  flex-direction: row;
 }
 
 *[dir=rtl] #statusbar-icons > * {
@@ -131,9 +135,7 @@ body:not(.rb-enabled) #statusbar-icons > .sb-start {
 
 #statusbar-icons > .sb-start-upper {
   visibility: hidden;
-  position: absolute;
-  left: 0;
-  top: -2.4rem;
+  top: -2.8rem;
   transition: visibility 0.5s ease, transform 0.5s ease;
 }
 
@@ -156,12 +158,17 @@ body:not(.rb-enabled) .utility-tray #statusbar-icons > .sb-start {
 
 #statusbar-label {
   position: relative;
-  margin-left: 0.8rem;
+  margin-left: 0;
   padding-top: 0.4rem;
   color: #ffffff;
   font-size: 1.5rem;
   font-weight: 400;
   line-height: 1.6rem;
+  height: 1.6rem;
+  flex: 1 1 auto;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 body.rb-enabled #statusbar-label {
@@ -188,9 +195,9 @@ body.rb-enabled #statusbar-label {
 }
 
 #statusbar-connections > * {
-  float: right;
   pointer-events: none;
   margin: 0 0.2rem;
+  display: inline-block;
 }
 
 #statusbar-connections .statusbar-data:not(.sb-icon-data-circle) {
@@ -247,7 +254,6 @@ body.rb-enabled #statusbar-label {
 }
 
 #statusbar-connections[data-multiple="true"] .statusbar-data[hidden] {
-  display: block;
   opacity: 0;
 }
 
@@ -288,14 +294,14 @@ body.rb-enabled #statusbar-label {
 }
 
 .sb-icon {
-  width: 1.6rem;
+  min-width: 1.6rem;
   height: 1.6rem;
   background: url('images/icons.png') no-repeat;
   background-size: 34rem 9.6rem;
 }
 
 #statusbar-icons .sb-icon-battery {
-  width: 2.5rem;
+  min-width: 2.5rem;
 }
 .sb-icon-battery[data-level="0"] {
   background-position: 0 0;
