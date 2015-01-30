@@ -97,6 +97,7 @@
 @media (orientation: landscape) {
   #screen.software-button-enabled #utility-tray {
     width: calc(100% - var(--software-home-button-height));
+    left: 0;
   }
 }
 
