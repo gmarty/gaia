@@ -6,26 +6,144 @@
  *  different sources.
  */
 (function IconsHelper(exports) {
+  const FETCH_XHR_TIMEOUT = 10000;
 
-  function getIcon(uri, iconSize, placeObj) {
-    var icon;
+  var dataStore = null;
 
-    if (placeObj && placeObj.icons) {
-      icon = getBestIcon(placeObj.icons, iconSize);
+  /**
+   * Return a promise that resolves to the URL of the best icon for a web page given its meta
+   * data and web manifest.
+   *
+   * @param uri {string}
+   * @param iconTargetSize {number}
+   * @param placeObj {Object}
+   * @param siteObj {Object}
+   * @returns {Promise}
+   */
+  function getIcon(uri, iconTargetSize, placeObj = {}, siteObj = {}) {
+    var iconUrl = null;
+
+    iconTargetSize = iconTargetSize * window.devicePixelRatio;
+
+    // First look for an icon in the manifest.
+    if (siteObj.webManifestUrl && siteObj.webManifest) {
+      iconUrl = getBestIconFromWebManifest(siteObj, iconTargetSize);
+      if (iconUrl) {
+        console.log('Icon from Web Manifest')
+      }
     }
 
-    // If we dont pick up a valid icon, use favicon.ico at the origin
-    if (!icon) {
+    // Otherwise, look into the meta tags.
+    if (!iconUrl && placeObj.icons) {
+      iconUrl = getBestIconFromMetaTags(placeObj.icons, iconTargetSize);
+      if (iconUrl) {
+        console.log('Icon from Meta tags')
+      }
+    }
+
+    // Last resort, we look for a favicon.ico file.
+    if (!iconUrl) {
+      console.log('Icon from favicon.ico')
       var a = document.createElement('a');
       a.href = uri;
-      icon = a.origin + '/favicon.ico';
+      iconUrl =
+        `${a.origin}/favicon.ico#-moz-resolution=${iconTargetSize},${iconTargetSize}`;
     }
 
-    // Future proofing as eventually this helper will retrieve and
-    // cache the icons, and will need an async API
     return new Promise(resolve => {
-      resolve(icon);
+      resolve(iconUrl);
     });
+  }
+
+
+  /**
+   * Same as above except the promise resolves as an object containing the blob of the icon and
+   * its size in pixels.
+   *
+   * @param uri {string}
+   * @param iconTargetSize {number}
+   * @param placeObj {Object}
+   * @param siteObj {Object}
+   * @returns {Promise}
+   */
+  function getIconBlob(uri, iconTargetSize, placeObj = {}, siteObj = {}) {
+    return new Promise((resolve, reject) => {
+      getIcon(uri, iconTargetSize, placeObj, siteObj)
+        .then(iconUrl => {
+          // @todo Need a better syntax.
+          getStore().then(iconStore => {
+            iconStore.get(iconUrl).then(iconObj => {
+              if (!iconObj) {
+                return fetchIcon(iconUrl)
+                  .then(iconObject => {
+                    // We resolve here to avoid I/O blocking on dataStore and quicker display.
+                    // Persisting to the dataStore takes place subsequently.
+                    resolve(iconObject);
+
+                    iconStore.add(iconObject, iconUrl);
+                  })
+                  .catch(err => {
+                    reject(`Failed to fetch icon ${iconUrl}: ${err}`);
+                  });
+              }
+
+              return resolve(iconObject);
+            }).catch(err => {
+              // We should fetch the icon and resolve the promise here, anyhow.
+              reject(`Failed to get icon from dataStore: ${err}`);
+            });
+          }).catch(err => {
+            // We should fetch the icon and resolve the promise here, anyhow.
+            reject(`Error opening the dataStore: ${err}`);
+          });
+        });
+    });
+  }
+
+  function getBestIconFromWebManifest(siteObj, iconSize) {
+    var webManifestUrl = siteObj.webManifestUrl;
+    var icons = siteObj.webManifest.icons;
+
+    if (!icons) {
+      return null;
+    }
+
+    var options = {};
+    icons.forEach(icon => {
+      var uri = icon.src;
+      var sizeValue = guessSize(icon.sizes);
+      if (!sizeValue) {
+        return;
+      }
+
+      options[sizeValue] = {
+        uri: uri
+      };
+    });
+
+    var sizes = Object.keys(options).sort((a, b) => a - b);
+    var icon = null;
+
+    // Handle the case of no size info in the whole list
+    // just return the first icon.
+    if (sizes.length === 0) {
+      var iconStrings = Object.keys(icons);
+      if (iconStrings.length > 0) {
+        icon = iconStrings[0];
+      }
+    } else {
+      var preferredSize = getPreferredSize(sizes, iconSize);
+      icon = options[preferredSize];
+    }
+
+    if (!icon) {
+      return null;
+    }
+
+    // Icon paths must be resolved relatively to the manifest URI.
+    var iconUrl = new URL(icon.uri, webManifestUrl);
+
+    return iconUrl.href;
   }
 
   // See bug 1041482, we will need to support better
@@ -33,7 +151,7 @@
   // A web page have different ways to defining icons
   // based on size, 'touch' capabilities and so on.
   // From gecko we will receive all the rel='icon'
-  // defined which will containg as well the sizes
+  // defined which will contain as well the sizes
   // supported in that file.
   // This function will help to deliver the best suitable
   // icon based on that definition list.
@@ -48,17 +166,15 @@
   //   }
   // }
   //
-  // iconSize is an aditional parameter to specify a concrete
+  // iconSize is an additional parameter to specify a concrete
   // size or the closest icon.
-  function getBestIcon(icons, iconSize) {
+  function getBestIconFromMetaTags(icons, iconSize) {
     if (!icons) {
       return null;
     }
 
     var options = getSizes(icons);
-    var sizes = Object.keys(options).sort(function(a, b) {
-      return a - b;
-    });
+    var sizes = Object.keys(options).sort((a, b) => a - b);
 
     // Handle the case of no size info in the whole list
     // just return the first icon.
@@ -74,8 +190,8 @@
       var iconsUrl = 'https://developer.mozilla.org/en-US/' +
         'Apps/Build/Icon_implementation_for_apps#General_icons_for_web_apps';
       console.warn('Warning: The apple-touch icons are being used ' +
-                   'as a fallback only. They will be deprecated in ' +
-                   'the future. See ' + iconsUrl);
+        'as a fallback only. They will be deprecated in ' +
+        'the future. See ' + iconsUrl);
     }
 
     return icon.uri;
@@ -89,9 +205,9 @@
   function getSizes(icons) {
     var sizes = {};
     var uris = Object.keys(icons);
-    uris.forEach(function(uri) {
+    uris.forEach(uri => {
       var uriSizes = icons[uri].sizes.join(' ').split(' ');
-      uriSizes.forEach(function(size) {
+      uriSizes.forEach(size => {
         var sizeValue = guessSize(size);
         if (!sizeValue) {
           return;
@@ -120,7 +236,7 @@
 
     var selected = -1;
     var length = sizes.length;
-    for(var i = 0; i < length && selected < targeted; i++) {
+    for (var i = 0; i < length && selected < targeted; i++) {
       selected = sizes[i];
     }
 
@@ -140,10 +256,87 @@
     return size.substr(0, xIndex);
   }
 
+
+  /**
+   * Return a promise that resolves to a dataStore for icons.
+   *
+   * @returns {Promise}
+   */
+  function getStore() {
+    return new Promise(resolve => {
+      if (dataStore) {
+        return resolve(dataStore);
+      }
+      navigator.getDataStores('icons').then(stores => {
+        dataStore = stores[0];
+        return resolve(dataStore);
+      });
+    });
+  }
+
+
+  /**
+   * Return a promise that resolves to an object containing the blob and size
+   * in pixels of an icon given its URL `iconUrl`.
+   *
+   * @param {string} iconUrl
+   * @returns {Promise}
+   */
+  function fetchIcon(iconUrl) {
+    return new Promise((resolve, reject) => {
+      var xhr = new XMLHttpRequest({
+        mozAnon: true,
+        mozSystem: true
+      });
+
+      xhr.open('GET', iconUrl, true);
+      xhr.responseType = 'blob';
+      xhr.timeout = FETCH_XHR_TIMEOUT;
+
+      // Remember that send() can throw for some non http protocols.
+      // The promise wrapper here protects us.
+      xhr.send();
+
+      xhr.onload = () => {
+        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+          var iconBlob = xhr.response;
+          var img = document.createElement('img');
+
+          img.src = URL.createObjectURL(iconBlob);
+
+          img.onload = () => {
+            var iconSize = Math.max(img.naturalWidth, img.naturalHeight);
+
+            resolve({
+              blob: iconBlob,
+              size: iconSize
+            });
+          };
+
+          img.onerror = () => {
+            reject(new Error(`Error while loading image.`));
+          };
+
+          return;
+        }
+
+        reject(new Error(
+          `Got HTTP status ${xhr.status} trying to load ${iconUrl}.`));
+      };
+
+      xhr.onerror = xhr.ontimeout = () => {
+        reject(new Error(`Error while getting ${iconUrl}.`));
+      };
+    });
+  }
+
   exports.IconsHelper = {
     getIcon: getIcon,
+    getIconBlob: getIconBlob,
 
-    getBestIcon: getBestIcon,
+    getBestIconFromWebManifest: getBestIconFromWebManifest,
+    getBestIcon: getBestIconFromMetaTags,
+
     // Make public for unit test purposes
     getSizes: getSizes
   };

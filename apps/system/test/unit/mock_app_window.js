@@ -152,7 +152,8 @@
     setActive: function() {},
     getSSLState: function() { return ''; },
     getCachedScreenshotBlob: function() {},
-    requestScreenshotURL: function() {}
+    requestScreenshotURL: function() {},
+    getSiteIconUrl: function() {}
   };
 
   MockAppWindow.addMixin = function() {};
