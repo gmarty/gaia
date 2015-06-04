@@ -39,8 +39,8 @@
    *
    *  Inspired by /dom/apps/AppUtils.jsm in Gecko.
    *
-   *  @param {Object} Raw manifest Manifest object.
-   *  @param {String} URL the manifest was retrieved from.
+   *  @param {Object} manifest Raw manifest Manifest object.
+   *  @param {String} manifestURL URL the manifest was retrieved from.
    *  @param {Integer} size Preferred size in pixels.
    *  @returns {URL} URL object of icon URL.
    */
@@ -72,8 +72,8 @@
    *
    * Copied from /dom/manifest/ManifestProcess.jsm in Gecko.
    *
-   * @param {Object} An un-processed manifest object.
-   * @param {String} The base URL the manifest was fetched from.
+   * @param {Object} manifest An un-processed manifest object.
+   * @param {String} baseURL The base URL the manifest was fetched from.
    * @returns {Object} A processed manifest object.
    */
   var processIcons = function(manifest, baseURL) {
