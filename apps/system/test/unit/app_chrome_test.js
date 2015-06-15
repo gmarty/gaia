@@ -284,6 +284,10 @@ suite('system/AppChrome', function() {
 
 
   suite('Navigation events', function() {
+    setup(function() {
+      this.sinon.stub(chrome, 'setSiteIcon');
+    });
+
     test('loadstart', function() {
       chrome.handleEvent({ type: 'mozbrowserloadstart' });
       assert.isTrue(chrome.containerElement.classList.contains('loading'));
