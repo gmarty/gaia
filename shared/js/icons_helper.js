@@ -44,13 +44,13 @@
 
     // Last resort, we look for a favicon.ico file.
     if (!iconUrl) {
-      DEBUG && console.log('Icon from favicon.ico');
       var a = document.createElement('a');
       a.href = uri;
       iconUrl = a.origin + '/favicon.ico';
       if (iconTargetSize) {
         iconUrl += '#-moz-resolution=' + iconTargetSize + ',' + iconTargetSize;
       }
+      DEBUG && console.log('Icon from favicon.ico');
     }
 
     return new Promise(resolve => {
@@ -115,10 +115,8 @@
     var options = {};
     icons.forEach(icon => {
       var uri = icon.src;
-      var sizeValue = guessSize(icon.sizes);
-      if (!sizeValue) {
-        return;
-      }
+      // Default sizeValue to 0 so we still use the icon when no size specified.
+      var sizeValue = guessSize(icon.sizes) || 0;
 
       options[sizeValue] = {
         uri: uri
@@ -339,10 +337,11 @@
     getIconBlob: getIconBlob,
 
     getBestIconFromWebManifest: getBestIconFromWebManifest,
-    getBestIcon: getBestIconFromMetaTags,
+    getBestIconFromMetaTags: getBestIconFromMetaTags,
 
-    // Make public for unit test purposes
-    getSizes: getSizes
+    // Make public for unit test purposes.
+    getSizes: getSizes,
+    fetchIcon: fetchIcon
   };
 
 })(window);
