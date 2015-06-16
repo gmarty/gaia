@@ -7,12 +7,13 @@
  */
 (function IconsHelper(exports) {
   const FETCH_XHR_TIMEOUT = 10000;
+  const DEBUG = false;
 
   var dataStore = null;
 
   /**
-   * Return a promise that resolves to the URL of the best icon for a web page given its meta
-   * data and web manifest.
+   * Return a promise that resolves to the URL of the best icon for a web page
+   * given its meta data and web manifest.
    *
    * @param uri {string}
    * @param iconTargetSize {number}
@@ -28,26 +29,28 @@
     // First look for an icon in the manifest.
     if (siteObj.webManifestUrl && siteObj.webManifest) {
       iconUrl = getBestIconFromWebManifest(siteObj, iconTargetSize);
-      if (iconUrl) {
-        console.log('Icon from Web Manifest')
+      if (DEBUG && iconUrl) {
+        console.log('Icon from Web Manifest');
       }
     }
 
     // Otherwise, look into the meta tags.
     if (!iconUrl && placeObj.icons) {
       iconUrl = getBestIconFromMetaTags(placeObj.icons, iconTargetSize);
-      if (iconUrl) {
-        console.log('Icon from Meta tags')
+      if (DEBUG && iconUrl) {
+        console.log('Icon from Meta tags');
       }
     }
 
     // Last resort, we look for a favicon.ico file.
     if (!iconUrl) {
-      console.log('Icon from favicon.ico')
+      DEBUG && console.log('Icon from favicon.ico');
       var a = document.createElement('a');
       a.href = uri;
-      iconUrl =
-        `${a.origin}/favicon.ico#-moz-resolution=${iconTargetSize},${iconTargetSize}`;
+      iconUrl = a.origin + '/favicon.ico';
+      if (iconTargetSize) {
+        iconUrl += '#-moz-resolution=' + iconTargetSize + ',' + iconTargetSize;
+      }
     }
 
     return new Promise(resolve => {
@@ -57,8 +60,8 @@
 
 
   /**
-   * Same as above except the promise resolves as an object containing the blob of the icon and
-   * its size in pixels.
+   * Same as above except the promise resolves as an object containing the blob
+   * of the icon and its size in pixels.
    *
    * @param uri {string}
    * @param iconTargetSize {number}
@@ -76,7 +79,8 @@
               if (!iconObj) {
                 return fetchIcon(iconUrl)
                   .then(iconObject => {
-                    // We resolve here to avoid I/O blocking on dataStore and quicker display.
+                    // We resolve here to avoid I/O blocking on dataStore and
+                    // quicker display.
                     // Persisting to the dataStore takes place subsequently.
                     resolve(iconObject);
 
@@ -87,7 +91,7 @@
                   });
               }
 
-              return resolve(iconObject);
+              return resolve(iconObj);
             }).catch(err => {
               // We should fetch the icon and resolve the promise here, anyhow.
               reject(`Failed to get icon from dataStore: ${err}`);

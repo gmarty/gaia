@@ -31,7 +31,8 @@ suite('Icons Helper', function() {
   suite('Default fallback to favicon.ico', function() {
     test('> ensure we fallback to favicon.ico', function(done) {
       IconsHelper.getIcon('http://example.com').then(icon => {
-        assert.equal(icon, 'http://example.com/favicon.ico');
+
+        assert.equal((new URL(icon)).pathname, '/favicon.ico');
         done();
       });
     });
@@ -189,6 +190,30 @@ suite('Icons Helper', function() {
       dpr = 1;
     });
 
+  });
+
+  suite('> -moz-resolution fragment', function() {
+    teardown(function() {
+      dpr = 1;
+    });
+
+    test('no target size', function(done) {
+      IconsHelper.getIcon('http://example.com').then(icon => {
+        assert.equal((new URL(icon)).hash, '');
+      })
+      .then((res) => { done(); })
+      .catch((err) => { done(); });
+    });
+
+    test('target size', function(done) {
+      dpr = 1.5;
+      IconsHelper.getIcon('http://example.com', 64).then(icon => {
+        // targetSize * devicePixelRatio
+        assert.ok((new URL(icon)).hash.indexOf('-moz-resolution=96,96') > -1);
+      })
+      .then((res) => { done(); })
+      .catch((err) => { done(); });
+    });
   });
 
 });

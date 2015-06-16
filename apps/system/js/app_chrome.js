@@ -939,7 +939,7 @@
 
     this.app.getSiteIconUrl()
       .then(iconObject => {
-        console.log(iconObject)
+        this.debug('iconObject:', iconObject);
 
         this.siteIcon.classList.toggle('small-icon', iconObject.isSmall);
         this.siteIcon.style.backgroundImage = `url("${iconObject.url}")`;
