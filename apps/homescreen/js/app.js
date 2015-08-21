@@ -1,4 +1,5 @@
-/* global MozActivity, HomeMetadata, Datastore */
+/* global MozActivity, HomeMetadata, Datastore, PagesStore, GaiaPinCard,
+          IconsHelper */
 /* jshint nonew: false */
 'use strict';
 
@@ -63,13 +64,18 @@ const BLACKLIST = [
  */
 const SETTINGS_VERSION = 0;
 
+/**
+ * The size in pixels of the icons in the pinned pages.
+ */
+const PAGES_ICON_SIZE = 30;
+
 (function(exports) {
 
   function App() {
     // Element references
     this.meta = document.head.querySelector('meta[name="theme-color"]');
-    this.shadow = document.getElementById('shadow');
-    this.scrollable = document.getElementById('scrollable');
+    this.appsShadow = document.querySelector('#apps-panel > .shadow');
+    this.appsScrollable = document.querySelector('#apps-panel > .scrollable');
     this.icons = document.getElementById('apps');
     this.bottombar = document.getElementById('bottombar');
     this.uninstall = document.getElementById('uninstall');
@@ -77,6 +83,8 @@ const SETTINGS_VERSION = 0;
     this.cancelDownload = document.getElementById('cancel-download');
     this.resumeDownload = document.getElementById('resume-download');
     this.settingsDialog = document.getElementById('settings');
+    this.pages = document.getElementById('pages');
+    this.pagesScrollable = document.querySelector('#pages-panel > .scrollable');
 
     // XXX Working around gaia-components issue #8
     this.cancelDownload.style.display = 'none';
@@ -114,7 +122,7 @@ const SETTINGS_VERSION = 0;
 
     // Signal handlers
     document.body.addEventListener('contextmenu', this);
-    this.scrollable.addEventListener('scroll', this);
+    this.appsScrollable.addEventListener('scroll', this);
     this.icons.addEventListener('activate', this);
     this.icons.addEventListener('drag-start', this);
     this.icons.addEventListener('drag-move', this);
@@ -204,6 +212,55 @@ const SETTINGS_VERSION = 0;
           }, (e) => {
             console.error('Error getting bookmarks', e);
           });
+        }),
+
+        // Get all pinned pages.
+        this.pagesStore.init().then(() => {
+          // Triggered when pages are added and updated.
+          document.addEventListener('places-set', (e) => {
+            var id = e.detail.id;
+            this.pagesStore.get(id).then((page) => {
+              if (!page.data.pinned) {
+                return;
+              }
+
+              for (var child of this.pages.children) {
+                if (child.dataset.id === id) {
+                  child.title = page.data.title;
+                  return;
+                }
+              }
+
+              // A new page was pinned.
+              this.addPinnedPage(page.data);
+            });
+          });
+
+          document.addEventListener('places-removed', (e) => {
+            var id = e.detail.id;
+            for (var child of this.pages.children) {
+              if (child.dataset.id === id) {
+                this.pages.removeChild(child);
+                return;
+              }
+            }
+          });
+
+          document.addEventListener('places-cleared', () => {
+            for (var child of this.pages.children) {
+              this.pages.removeChild(child);
+            }
+          });
+        }, (e) => {
+          console.error('Error initialising bookmarks', e);
+        }).then(() => {
+          return this.pagesStore.getAll().then((pages) => {
+            for (var page of pages) {
+              this.addPinnedPage(page.data);
+            }
+          }, (e) => {
+            console.error('Error getting pinned pages', e);
+          });
         })
       ]).then(() => {
         for (var data of this.startupMetadata) {
@@ -223,6 +280,7 @@ const SETTINGS_VERSION = 0;
     this.iconsToRetry = [];
     this.metadata = new HomeMetadata();
     this.bookmarks = new Datastore('bookmarks_store');
+    this.pagesStore = new PagesStore('places');
 
     // Load metadata, then populate apps. If metadata loading fails,
     // populate apps anyway - it means they'll be in the default order
@@ -244,6 +302,15 @@ const SETTINGS_VERSION = 0;
         resolve();
       });
     }).then(populateApps);
+
+    // Click on pinned pages
+    this.pages.addEventListener('click', (evt) => {
+      var target = evt.target;
+      if (target.nodeName !== 'GAIA-PIN-CARD') {
+        return;
+      }
+      window.open(target.dataset.id, '_blank');
+    });
   }
 
   App.prototype = {
@@ -277,7 +344,7 @@ const SETTINGS_VERSION = 0;
       }
 
       // Do not add blacklisted apps
-      if (BLACKLIST.indexOf(app.origin) !== -1) {
+      if (BLACKLIST.includes(app.origin)) {
         return;
       }
 
@@ -346,7 +413,7 @@ const SETTINGS_VERSION = 0;
         var handleRoleChange = function(app, container) {
           var manifest = app.manifest || app.updateManifest;
           var hidden = (manifest && manifest.role &&
-            HIDDEN_ROLES.indexOf(manifest.role) !== -1);
+            HIDDEN_ROLES.includes(manifest.role));
           container.style.display = hidden ? 'none' : '';
         };
 
@@ -396,6 +463,35 @@ const SETTINGS_VERSION = 0;
       icon.refresh();
     },
 
+    addPinnedPage: function(page) {
+      var pinCard = new GaiaPinCard();
+
+      pinCard.title = page.title;
+      pinCard.dataset.id = page.url;
+      pinCard.style.order = -Math.round(page.pinTime / 1000);
+
+      this.pages.appendChild(pinCard);
+
+      setTimeout(() => {
+        if (page.screenshot) {
+          pinCard.background = {
+            src: URL.createObjectURL(page.screenshot)
+          };
+        }
+
+        IconsHelper.getIconBlob(page.url, PAGES_ICON_SIZE, page)
+          .then((iconObj) => {
+            if (iconObj.blob) {
+              var iconURL = URL.createObjectURL(iconObj.blob);
+              pinCard.icon = `url(${iconURL})`;
+            }
+          })
+          .catch((e) => {
+            console.error('Failed to fetch icon', e);
+          });
+      });
+    },
+
     storeAppOrder: function() {
       var storedOrders = [];
       var children = this.icons.children;
@@ -421,10 +517,10 @@ const SETTINGS_VERSION = 0;
         return;
       }
 
-      this.scrollable.addEventListener('transitionend', this);
+      this.appsScrollable.addEventListener('transitionend', this);
       this.pinchListening = false;
-      this.scrollable.style.transition = '';
-      this.scrollable.style.transform = '';
+      this.appsScrollable.style.transition = '';
+      this.appsScrollable.style.transform = '';
       this.handleEvent({ type: 'scroll' });
     },
 
@@ -448,14 +544,14 @@ const SETTINGS_VERSION = 0;
 
       var iconHeight = Math.round(children[firstVisibleChild].
         getBoundingClientRect().height);
-      var scrollHeight = this.scrollable.clientHeight;
+      var scrollHeight = this.appsScrollable.clientHeight;
       var pageHeight = Math.floor(scrollHeight / iconHeight) * iconHeight;
       var gridHeight = (Math.ceil((iconHeight *
         Math.ceil(visibleChildren / (this.small ? 4 : 3))) / pageHeight) *
         pageHeight) + (scrollHeight - pageHeight);
 
       // Reset scroll-snap points
-      this.scrollable.style.scrollSnapPointsY = 'repeat(' + pageHeight + 'px)';
+      this.appsScrollable.style.scrollSnapPointsY = `repeat(${pageHeight}px)`;
 
       // Set page border background
       this.icons.style.backgroundSize = '100% ' + (pageHeight * 2) + 'px';
@@ -466,12 +562,12 @@ const SETTINGS_VERSION = 0;
         this.icons.style.height = (gridHeight + 1) + 'px';
       }, RESIZE_TIMEOUT);
 
-      var currentScroll = this.scrollable.scrollTop;
+      var currentScroll = this.appsScrollable.scrollTop;
       var destination = Math.min(gridHeight - scrollHeight,
         Math.round(currentScroll / pageHeight + bias) * pageHeight);
       if (Math.abs(destination - currentScroll) > 1) {
-        this.scrollable.style.overflow = '';
-        this.scrollable.scrollTo(
+        this.appsScrollable.style.overflow = '';
+        this.appsScrollable.scrollTo(
           { left: 0, top: destination, behavior: 'smooth' });
       }
     },
@@ -523,11 +619,11 @@ const SETTINGS_VERSION = 0;
 
       // Display the top shadow when scrolling down
       case 'scroll':
-        var position = this.scrollable.scrollTop;
+        var position = this.appsScrollable.scrollTop;
         var scrolled = position > 0;
         if (this.scrolled !== scrolled) {
           this.scrolled = scrolled;
-          this.shadow.classList.toggle('visible', scrolled);
+          this.appsShadow.classList.toggle('visible', scrolled);
         }
         break;
 
@@ -566,7 +662,7 @@ const SETTINGS_VERSION = 0;
       // Disable scrolling during dragging, and display bottom-bar
       case 'drag-start':
         document.body.classList.add('dragging');
-        this.scrollable.style.overflow = 'hidden';
+        this.appsScrollable.style.overflow = 'hidden';
         icon = e.detail.target.firstElementChild;
 
         this.draggingEditable = !!icon.bookmark;
@@ -580,7 +676,7 @@ const SETTINGS_VERSION = 0;
 
       case 'drag-finish':
         document.body.classList.remove('dragging');
-        this.scrollable.style.overflow = '';
+        this.appsScrollable.style.overflow = '';
         this.bottombar.classList.remove('active');
         this.edit.classList.remove('active');
         this.uninstall.classList.remove('active');
@@ -599,7 +695,7 @@ const SETTINGS_VERSION = 0;
           if (e.detail.dropTarget === this.icons) {
             var rect = this.icons.getChildOffsetRect(e.detail.target);
             var x = e.detail.clientX;
-            var y = e.detail.clientY + this.scrollable.scrollTop;
+            var y = e.detail.clientY + this.appsScrollable.scrollTop;
             if (x < rect.left || y < rect.top ||
                 x >= rect.right || y >= rect.bottom) {
               e.preventDefault();
@@ -690,7 +786,7 @@ const SETTINGS_VERSION = 0;
                                e.touches[1].clientY, 2));
           this.pinchListening = true;
           document.body.classList.add('zooming');
-          this.scrollable.style.transition = 'unset';
+          this.appsScrollable.style.transition = 'unset';
         } else {
           this.stopPinch();
         }
@@ -717,7 +813,7 @@ const SETTINGS_VERSION = 0;
 
         if (!this.scrolled && distance > 0) {
           this.scrolled = true;
-          this.shadow.classList.add('visible');
+          this.appsShadow.classList.add('visible');
         }
 
         if (this.small !== newState) {
@@ -728,7 +824,7 @@ const SETTINGS_VERSION = 0;
           this.stopPinch();
           this.saveSettings();
         } else if (Math.abs(distance) > PINCH_FEEDBACK_THRESHOLD) {
-          this.scrollable.style.transform = 'scale(' +
+          this.appsScrollable.style.transform = 'scale(' +
             ((window.innerWidth + distance / 4) / window.innerWidth) + ')';
         }
         break;
@@ -743,8 +839,8 @@ const SETTINGS_VERSION = 0;
         break;
 
       case 'transitionend':
-        if (e.target === this.scrollable) {
-          this.scrollable.removeEventListener('transitionend', this);
+        if (e.target === this.appsScrollable) {
+          this.appsScrollable.removeEventListener('transitionend', this);
           document.body.classList.remove('zooming');
           this.snapScrollPosition(0);
         }
@@ -782,7 +878,9 @@ const SETTINGS_VERSION = 0;
 
       case 'hashchange':
         if (!document.hidden) {
-          this.scrollable.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+          for (var scrollable of [this.appsScrollable, this.pagesScrollable]) {
+            scrollable.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+          }
         }
         break;
 

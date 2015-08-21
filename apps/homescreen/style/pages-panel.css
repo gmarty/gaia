@@ -1,0 +1,28 @@
+#pages-panel {
+  font-size: 1.5rem;
+  color: white;
+}
+
+#pages-panel > .scrollable {
+  overflow-y: auto;
+  scroll-snap-type-y: mandatory;
+  scroll-snap-points-y: repeat(calc(13.5rem + 3vw));
+  height: 100vh;
+  transition: transform 0.2s;
+  padding-top: 1.5vw;
+}
+
+#pages {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+#pages gaia-pin-card {
+  position: relative;
+  display: inline-block;
+  width: calc(50% - 1rem);
+  height: 13.5rem;
+  float: left;
+  padding: 1.5rem 0 0 1rem;
+}
